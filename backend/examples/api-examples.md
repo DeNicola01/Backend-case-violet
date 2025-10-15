@@ -48,7 +48,7 @@
 
 ### Criar Agricultor
 ```bash
-curl -X POST http://localhost:3000/farmers \
+curl -X POST http://localhost:3333/farmers \
   -H "Content-Type: application/json" \
   -d '{
     "fullName": "João Silva Santos",
@@ -61,22 +61,22 @@ curl -X POST http://localhost:3000/farmers \
 
 ### Listar Todos os Agricultores
 ```bash
-curl -X GET http://localhost:3000/farmers
+curl -X GET http://localhost:3333/farmers
 ```
 
 ### Buscar por ID
 ```bash
-curl -X GET http://localhost:3000/farmers/ID_DO_AGRICULTOR
+curl -X GET http://localhost:3333/farmers/ID_DO_AGRICULTOR
 ```
 
 ### Buscar por CPF
 ```bash
-curl -X GET http://localhost:3000/farmers/cpf/12345678901
+curl -X GET http://localhost:3333/farmers/cpf/12345678901
 ```
 
 ### Atualizar Agricultor
 ```bash
-curl -X PATCH http://localhost:3000/farmers/ID_DO_AGRICULTOR \
+curl -X PATCH http://localhost:3333/farmers/ID_DO_AGRICULTOR \
   -H "Content-Type: application/json" \
   -d '{
     "fullName": "João Silva Santos Junior",
@@ -86,17 +86,17 @@ curl -X PATCH http://localhost:3000/farmers/ID_DO_AGRICULTOR \
 
 ### Desativar Agricultor
 ```bash
-curl -X PATCH http://localhost:3000/farmers/ID_DO_AGRICULTOR/deactivate
+curl -X PATCH http://localhost:3333/farmers/ID_DO_AGRICULTOR/deactivate
 ```
 
 ### Ativar Agricultor
 ```bash
-curl -X PATCH http://localhost:3000/farmers/ID_DO_AGRICULTOR/activate
+curl -X PATCH http://localhost:3333/farmers/ID_DO_AGRICULTOR/activate
 ```
 
 ### Excluir Agricultor (apenas se inativo)
 ```bash
-curl -X DELETE http://localhost:3000/farmers/ID_DO_AGRICULTOR
+curl -X DELETE http://localhost:3333/farmers/ID_DO_AGRICULTOR
 ```
 
 ## CPFs Válidos para Teste

@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,9 +16,11 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateFarmerUseCase } from './application/use-cases/create-farmer/create-farmer.use-case';
 import { FindAllFarmersUseCase } from './application/use-cases/find-all-farmers/find-all-farmers.use-case';
+import { FindFarmersWithFiltersUseCase } from './application/use-cases/find-farmers-with-filters/find-farmers-with-filters.use-case';
 import { FindFarmerByIdUseCase } from './application/use-cases/find-farmer-by-id/find-farmer-by-id.use-case';
 import { FindFarmerByCpfUseCase } from './application/use-cases/find-farmer-by-cpf/find-farmer-by-cpf.use-case';
 import { UpdateFarmerUseCase } from './application/use-cases/update-farmer/update-farmer.use-case';
@@ -27,6 +30,8 @@ import { DeactivateFarmerUseCase } from './application/use-cases/deactivate-farm
 import { CreateFarmerDto } from './dto/create-farmer.dto';
 import { UpdateFarmerDto } from './dto/update-farmer.dto';
 import { FarmerResponseDto } from './dto/farmer-response.dto';
+import { FindFarmersDto } from './dto/find-farmers.dto';
+import { PaginatedResponseDto } from './dto/paginated-response.dto';
 import { FarmerMapper } from './application/mappers/farmer.mapper';
 
 @ApiTags('farmers')
@@ -35,6 +40,7 @@ export class FarmersController {
   constructor(
     private readonly createFarmerUseCase: CreateFarmerUseCase,
     private readonly findAllFarmersUseCase: FindAllFarmersUseCase,
+    private readonly findFarmersWithFiltersUseCase: FindFarmersWithFiltersUseCase,
     private readonly findFarmerByIdUseCase: FindFarmerByIdUseCase,
     private readonly findFarmerByCpfUseCase: FindFarmerByCpfUseCase,
     private readonly updateFarmerUseCase: UpdateFarmerUseCase,
@@ -71,15 +77,35 @@ export class FarmersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos os agricultores' })
+  @ApiOperation({ summary: 'Listar agricultores com filtros e paginação' })
+  @ApiQuery({ name: 'name', required: false, description: 'Filtrar por nome' })
+  @ApiQuery({ name: 'cpf', required: false, description: 'Filtrar por CPF' })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por status ativo/inativo' })
+  @ApiQuery({ name: 'page', required: false, description: 'Número da página (padrão: 1)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Itens por página (padrão: 10)' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de agricultores retornada com sucesso',
-    type: [FarmerResponseDto],
+    description: 'Lista paginada de agricultores retornada com sucesso',
+    type: PaginatedResponseDto<FarmerResponseDto>,
   })
-  async findAll(): Promise<FarmerResponseDto[]> {
-    const farmers = await this.findAllFarmersUseCase.execute();
-    return FarmerMapper.toResponseDtoArray(farmers);
+  async findAll(@Query() query: FindFarmersDto): Promise<PaginatedResponseDto<FarmerResponseDto>> {
+    const filters = {
+      name: query.name,
+      cpf: query.cpf,
+      isActive: query.isActive,
+    };
+
+    const pagination = {
+      page: query.page || 1,
+      limit: query.limit || 10,
+    };
+
+    const result = await this.findFarmersWithFiltersUseCase.execute(filters, pagination);
+    
+    return {
+      data: FarmerMapper.toResponseDtoArray(result.data),
+      meta: result.meta,
+    };
   }
 
   @Get(':id')

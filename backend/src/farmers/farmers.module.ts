@@ -7,6 +7,7 @@ import { FarmerRepository, FARMER_REPOSITORY } from './domain/repositories/farme
 import { FarmerDomainService } from './domain/services/farmer-domain.service';
 import { CreateFarmerUseCase } from './application/use-cases/create-farmer/create-farmer.use-case';
 import { FindAllFarmersUseCase } from './application/use-cases/find-all-farmers/find-all-farmers.use-case';
+import { FindFarmersWithFiltersUseCase } from './application/use-cases/find-farmers-with-filters/find-farmers-with-filters.use-case';
 import { FindFarmerByIdUseCase } from './application/use-cases/find-farmer-by-id/find-farmer-by-id.use-case';
 import { FindFarmerByCpfUseCase } from './application/use-cases/find-farmer-by-cpf/find-farmer-by-cpf.use-case';
 import { UpdateFarmerUseCase } from './application/use-cases/update-farmer/update-farmer.use-case';
@@ -30,6 +31,7 @@ import { DeactivateFarmerUseCase } from './application/use-cases/deactivate-farm
     // Use Cases
     CreateFarmerUseCase,
     FindAllFarmersUseCase,
+    FindFarmersWithFiltersUseCase,
     FindFarmerByIdUseCase,
     FindFarmerByCpfUseCase,
     UpdateFarmerUseCase,
@@ -41,6 +43,7 @@ import { DeactivateFarmerUseCase } from './application/use-cases/deactivate-farm
     FARMER_REPOSITORY,
     CreateFarmerUseCase,
     FindAllFarmersUseCase,
+    FindFarmersWithFiltersUseCase,
     FindFarmerByIdUseCase,
     FindFarmerByCpfUseCase,
     UpdateFarmerUseCase,

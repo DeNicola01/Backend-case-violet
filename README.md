@@ -1,184 +1,165 @@
-# Farmer Backend API
+# Sistema de Gerenciamento de Agricultores
 
-API para gerenciamento de agricultores desenvolvida com NestJS e MongoDB.
+Sistema completo para gerenciamento de agricultores com backend em NestJS e frontend em Next.js.
 
-## Requisitos
+## Estrutura do Projeto
 
-- Node.js (versão 16 ou superior)
-- MongoDB (versão 4.4 ou superior)
-- npm ou yarn
+```
+├── backend/          # API NestJS com MongoDB
+├── frontend/         # Interface Next.js
+└── README.md         # Este arquivo
+```
 
-## Instalação
+## Tecnologias
 
-1. Clone o repositório
+### Backend
+- NestJS
+- MongoDB com Mongoose
+- TypeScript
+- Clean Architecture + DDD
+- Swagger para documentação
+
+### Frontend
+- Next.js 15
+- React 19
+- TypeScript
+- Tailwind CSS
+- Heroicons
+
+## Funcionalidades
+
+### Backend
+- ✅ CRUD completo de agricultores
+- ✅ Validação de CPF único e válido
+- ✅ Regras de negócio (não permite excluir agricultor ativo)
+- ✅ Arquitetura Clean + DDD
+- ✅ Tratamento de erros com mensagens descritivas
+- ✅ Documentação Swagger
+
+### Frontend
+- ✅ Tabela responsiva de agricultores
+- ✅ Menu de ações (editar, excluir, ativar/desativar)
+- ✅ Modais de edição e confirmação
+- ✅ Validação de regras de negócio
+- ✅ Interface moderna com Tailwind CSS
+
+## Como Executar
+
+### Backend
+
+1. Navegue para a pasta backend:
+```bash
+cd backend
+```
+
 2. Instale as dependências:
 ```bash
 npm install
 ```
 
-3. Certifique-se de que o MongoDB está rodando na porta padrão (27017)
+3. Configure o MongoDB:
+```bash
+docker-compose up -d
+```
 
-4. Execute a aplicação:
+4. Execute o backend:
 ```bash
 npm run start:dev
 ```
 
-A aplicação estará disponível em `http://localhost:3000`
+O backend estará disponível em `http://localhost:3333`
+Documentação Swagger: `http://localhost:3333/api`
 
-## Documentação da API
+### Frontend
 
-A documentação interativa da API está disponível em `http://localhost:3000/api` (Swagger)
+1. Navegue para a pasta frontend:
+```bash
+cd frontend
+```
 
-## Endpoints
+2. Instale as dependências:
+```bash
+npm install
+```
 
-### Agricultores
+3. Configure a URL da API:
+Crie um arquivo `.env.local` com:
+```
+NEXT_PUBLIC_API_URL=http://localhost:3333
+```
 
-- `POST /farmers` - Criar um novo agricultor
-- `GET /farmers` - Listar todos os agricultores
-- `GET /farmers/:id` - Buscar agricultor por ID
-- `GET /farmers/cpf/:cpf` - Buscar agricultor por CPF
-- `PATCH /farmers/:id` - Atualizar dados do agricultor
-- `PATCH /farmers/:id/activate` - Ativar agricultor
-- `PATCH /farmers/:id/deactivate` - Desativar agricultor
-- `DELETE /farmers/:id` - Excluir agricultor
+4. Execute o frontend:
+```bash
+npm run dev
+```
+
+O frontend estará disponível em `http://localhost:3001`
 
 ## Regras de Negócio
 
-### Criação de Agricultor
-- `fullName`: Obrigatório (string)
-- `cpf`: Obrigatório, único e válido (string)
-- `birthDate`: Opcional (date)
-- `phone`: Opcional (string)
-- `isActive`: Default true (boolean)
+1. **CPF Único**: Não pode haver dois agricultores com o mesmo CPF
+2. **CPF Válido**: O CPF deve ser válido conforme algoritmo oficial
+3. **Exclusão**: Só é possível excluir agricultores inativos
+4. **Edição**: CPF não pode ser alterado após criação
+5. **Status**: Agricultores podem ser ativados/desativados
 
-### Atualização de Agricultor
-- Todos os campos podem ser alterados, exceto o CPF
-- O CPF não pode ser modificado após a criação
+## API Endpoints
 
-### Exclusão de Agricultor
-- Só é possível excluir agricultores com `isActive = false`
-- Para excluir um agricultor ativo, primeiro desative-o
-
-### Validação de CPF
-- Implementa algoritmo completo de validação de CPF brasileiro
-- Verifica dígitos verificadores
-- Rejeita CPFs com todos os dígitos iguais
-
-## Estrutura do Projeto
-
-```
-src/
-├── farmers/
-│   ├── domain/                          # 🏛️ Camada de Domínio
-│   │   ├── entities/                    # Entidades de Domínio
-│   │   │   └── farmer.entity.ts
-│   │   ├── value-objects/               # Value Objects
-│   │   │   ├── cpf.vo.ts
-│   │   │   ├── name.vo.ts
-│   │   │   ├── phone.vo.ts
-│   │   │   └── farmer-id.vo.ts
-│   │   ├── repositories/                # Interfaces de Repositório
-│   │   │   ├── farmer-read.repository.ts
-│   │   │   ├── farmer-write.repository.ts
-│   │   │   └── farmer.repository.ts
-│   │   ├── services/                    # Serviços de Domínio
-│   │   │   └── farmer-domain.service.ts
-│   │   ├── events/                      # Eventos de Domínio
-│   │   │   ├── domain-event.ts
-│   │   │   ├── farmer-created.event.ts
-│   │   │   ├── farmer-updated.event.ts
-│   │   │   └── farmer-deactivated.event.ts
-│   │   └── factories/                   # Factories
-│   │       └── farmer.factory.ts
-│   ├── application/                     # 🎯 Camada de Aplicação
-│   │   ├── use-cases/                   # Casos de Uso
-│   │   │   ├── create-farmer/
-│   │   │   ├── update-farmer/
-│   │   │   ├── delete-farmer/
-│   │   │   ├── find-farmer-by-id/
-│   │   │   ├── find-farmer-by-cpf/
-│   │   │   ├── find-all-farmers/
-│   │   │   ├── activate-farmer/
-│   │   │   └── deactivate-farmer/
-│   │   └── mappers/                     # Mappers
-│   │       └── farmer.mapper.ts
-│   ├── infrastructure/                  # 🔧 Camada de Infraestrutura
-│   │   └── repositories/                # Implementações de Repositório
-│   │       └── mongodb-farmer.repository.ts
-│   ├── dto/                            # 📦 Data Transfer Objects
-│   │   ├── create-farmer.dto.ts
-│   │   ├── update-farmer.dto.ts
-│   │   └── farmer-response.dto.ts
-│   ├── schemas/                        # 🗄️ Schemas do MongoDB
-│   │   └── farmer.schema.ts
-│   ├── farmers.controller.ts           # 🎮 Controller
-│   └── farmers.module.ts              # 📦 Módulo NestJS
-├── app.module.ts
-└── main.ts
-```
+### Agricultores
+- `GET /farmers` - Lista todos os agricultores
+- `GET /farmers/:id` - Busca agricultor por ID
+- `GET /farmers/cpf/:cpf` - Busca agricultor por CPF
+- `POST /farmers` - Cria novo agricultor
+- `PATCH /farmers/:id` - Atualiza agricultor
+- `DELETE /farmers/:id` - Exclui agricultor
+- `PATCH /farmers/:id/activate` - Ativa agricultor
+- `PATCH /farmers/:id/deactivate` - Desativa agricultor
 
 ## Arquitetura
 
-O projeto utiliza **SOLID + DDD (Domain-Driven Design)** com as seguintes camadas:
-
-### **🏛️ Camadas da Aplicação**
-
-- **Domain**: Entidades, Value Objects, Serviços de Domínio e Eventos
-- **Application**: Use Cases, Commands e Mappers
-- **Infrastructure**: Implementações de repositório e persistência
-- **Presentation**: Controllers, DTOs e Schemas
-
-### **🎯 Princípios SOLID**
-
-- **SRP**: Cada Use Case tem uma única responsabilidade
-- **OCP**: Aberto para extensão, fechado para modificação
-- **LSP**: Implementações substituíveis via interfaces
-- **ISP**: Interfaces segregadas por responsabilidade
-- **DIP**: Dependências invertidas via injeção
-
-### **📋 Padrões DDD**
-
-- **Value Objects**: CPF, Name, Phone, FarmerId
-- **Entities**: Farmer com identidade e ciclo de vida
-- **Domain Services**: Regras de negócio complexas
-- **Repositories**: Abstrações para persistência
-- **Domain Events**: Eventos para auditoria e integração
-- **Factories**: Criação e atualização de entidades
-
-Para mais detalhes, consulte:
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Arquitetura detalhada
-- [FUNCTIONS.md](./FUNCTIONS.md) - Documentação das funções
-
-## Exemplos de Uso
-
-### Criar um agricultor
-```bash
-curl -X POST http://localhost:3000/farmers \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "João Silva",
-    "cpf": "12345678901",
-    "birthDate": "1990-01-01",
-    "phone": "(11) 99999-9999"
-  }'
+### Backend (Clean Architecture + DDD)
+```
+src/
+├── farmers/
+│   ├── domain/           # Entidades, Value Objects, Serviços
+│   ├── application/      # Use Cases
+│   ├── infrastructure/   # Repositórios, Schemas
+│   └── dto/             # Data Transfer Objects
+└── common/              # Filtros, Utilitários
 ```
 
-### Atualizar um agricultor
-```bash
-curl -X PATCH http://localhost:3000/farmers/ID_DO_AGRICULTOR \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "João Silva Santos",
-    "phone": "(11) 88888-8888"
-  }'
+### Frontend (Component-Based)
+```
+src/
+├── app/                 # Páginas Next.js
+├── components/          # Componentes React
+├── services/            # Comunicação com API
+└── types/              # Tipos TypeScript
 ```
 
-### Desativar um agricultor
-```bash
-curl -X PATCH http://localhost:3000/farmers/ID_DO_AGRICULTOR/deactivate
-```
+## Desenvolvimento
 
-### Excluir um agricultor (apenas se inativo)
-```bash
-curl -X DELETE http://localhost:3000/farmers/ID_DO_AGRICULTOR
-```
+### Backend
+- Use Cases para cada operação
+- Repository Pattern para acesso a dados
+- Domain Services para regras de negócio
+- Value Objects para validações
+- Tratamento global de exceções
+
+### Frontend
+- Componentes reutilizáveis
+- Hooks para gerenciamento de estado
+- Serviços para comunicação com API
+- Modais para ações complexas
+- Validação de formulários
+
+## Próximas Funcionalidades
+
+- [ ] Autenticação e autorização
+- [ ] Filtros e busca avançada
+- [ ] Paginação
+- [ ] Exportação de dados
+- [ ] Dashboard com estatísticas
+- [ ] Notificações em tempo real
+
+

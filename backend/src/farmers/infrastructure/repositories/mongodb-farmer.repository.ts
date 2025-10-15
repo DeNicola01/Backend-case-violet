@@ -8,6 +8,7 @@ import { FarmerId } from '../../domain/value-objects/farmer-id.vo';
 import { CPF } from '../../domain/value-objects/cpf.vo';
 import { Name } from '../../domain/value-objects/name.vo';
 import { Phone } from '../../domain/value-objects/phone.vo';
+import { FindFarmersFilters, PaginationOptions, PaginatedResult } from '../../domain/repositories/farmer-read.repository';
 
 @Injectable()
 export class MongodbFarmerRepository implements FarmerRepository {
@@ -69,6 +70,54 @@ export class MongodbFarmerRepository implements FarmerRepository {
   async findAll(): Promise<Farmer[]> {
     const farmers = await this.farmerModel.find().exec();
     return farmers.map(farmer => this.toDomainEntity(farmer));
+  }
+
+  async findWithFilters(filters: FindFarmersFilters, pagination: PaginationOptions): Promise<PaginatedResult<Farmer>> {
+    // Construir query de filtros
+    const query: any = {};
+    
+    if (filters.name) {
+      query.fullName = { $regex: filters.name, $options: 'i' };
+    }
+    
+    if (filters.cpf) {
+      query.cpf = { $regex: filters.cpf.replace(/\D/g, ''), $options: 'i' };
+    }
+    
+    if (filters.isActive !== undefined) {
+      query.isActive = filters.isActive;
+    }
+
+    // Calcular skip para paginação
+    const skip = (pagination.page - 1) * pagination.limit;
+
+    // Executar query com paginação
+    const [farmers, total] = await Promise.all([
+      this.farmerModel
+        .find(query)
+        .skip(skip)
+        .limit(pagination.limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.farmerModel.countDocuments(query).exec()
+    ]);
+
+    // Calcular metadados da paginação
+    const totalPages = Math.ceil(total / pagination.limit);
+    const hasPrevious = pagination.page > 1;
+    const hasNext = pagination.page < totalPages;
+
+    return {
+      data: farmers.map(farmer => this.toDomainEntity(farmer)),
+      meta: {
+        page: pagination.page,
+        limit: pagination.limit,
+        total,
+        totalPages,
+        hasPrevious,
+        hasNext,
+      },
+    };
   }
 
   async existsByCpf(cpf: CPF): Promise<boolean> {
