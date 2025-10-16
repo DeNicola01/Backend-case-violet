@@ -9,7 +9,6 @@ import Pagination from '@/components/Pagination';
 import EditFarmerModal from '@/components/EditFarmerModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import CreateFarmerModal from '@/components/CreateFarmerModal';
-import { PlusIcon } from '@heroicons/react/24/outline';
 
 export default function Home() {
   const [farmers, setFarmers] = useState<Farmer[]>([]);
@@ -165,8 +164,6 @@ export default function Home() {
     setCurrentPage(1);
   }, []);
 
-  // Check if any filters are active
-  const hasActiveFilters = Boolean(searchTerm || statusFilter !== '');
 
   if (loading) {
     return (
@@ -183,20 +180,11 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Agricultores</h1>
-              <p className="mt-2 text-gray-600">
-                Gerencie os agricultores cadastrados no sistema
-              </p>
-            </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Novo Agricultor
-            </button>
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Agricultores</h1>
+            <p className="mt-2 text-gray-600">
+              Gerencie os agricultores cadastrados no sistema
+            </p>
           </div>
 
           {error && (
@@ -211,8 +199,8 @@ export default function Home() {
             statusValue={statusFilter}
             onSearchChange={handleSearchChange}
             onStatusChange={handleStatusChange}
-            hasActiveFilters={hasActiveFilters}
             onClearFilters={clearFilters}
+            onCreateFarmer={() => setShowCreateModal(true)}
           />
 
           <div className="bg-white shadow-xl shadow-gray-200/50 rounded-lg border border-gray-200">

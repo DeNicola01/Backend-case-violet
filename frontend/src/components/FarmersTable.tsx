@@ -10,6 +10,7 @@ import {
   CheckCircleIcon, 
   XCircleIcon 
 } from '@heroicons/react/24/outline';
+import { parseDateFromAPI } from '@/utils/dateUtils';
 
 interface FarmersTableProps {
   farmers: Farmer[];
@@ -30,7 +31,18 @@ const FarmersTable = memo(function FarmersTable({
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    try {
+      // Use parseDateFromAPI to avoid timezone issues
+      const date = parseDateFromAPI(dateString);
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return '-';
+      }
+      return date.toLocaleDateString('pt-BR');
+    } catch (error) {
+      console.warn('Error formatting date:', dateString, error);
+      return '-';
+    }
   };
 
   const formatCPF = (cpf: string) => {
@@ -79,7 +91,7 @@ const FarmersTable = memo(function FarmersTable({
   }, [activeMenu]);
 
   return (
-    <div className="overflow-x-auto overflow-y-visible min-h-[600px]">
+    <div className="overflow-x-auto overflow-y-visible min-h-[500px]">
       <table className="min-w-full">
         <thead className="bg-gray-50">
           <tr className="border-b border-gray-200">
@@ -106,19 +118,19 @@ const FarmersTable = memo(function FarmersTable({
         <tbody className="bg-white divide-y divide-gray-200">
           {farmers.map((farmer) => (
             <tr key={farmer.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                 {farmer.fullName}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                 {formatCPF(farmer.cpf)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                 {formatDate(farmer.birthDate)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                 {formatPhone(farmer.phone)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-6 py-3 whitespace-nowrap">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   farmer.isActive 
                     ? 'bg-green-100 text-green-800' 
@@ -127,7 +139,7 @@ const FarmersTable = memo(function FarmersTable({
                   {farmer.isActive ? 'Ativo' : 'Inativo'}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
                 <div className="relative" data-menu-container>
                   <button
                     ref={(el) => { buttonRefs.current[farmer.id] = el; }}

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { CreateFarmerData } from '@/types/farmer';
 import { apiService } from '@/services/api';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { DatePicker } from './DatePicker';
+import { formatDateForAPI } from '@/utils/dateUtils';
 
 interface CreateFarmerModalProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ export default function CreateFarmerModal({
     phone: '',
     isActive: true,
   });
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
@@ -33,6 +36,7 @@ export default function CreateFarmerModal({
       setError(null);
       setLoading(false);
       setBirthDateError(null);
+      setBirthDate(null);
     }
   }, [isOpen]);
 
@@ -40,7 +44,7 @@ export default function CreateFarmerModal({
     e.preventDefault();
     
     // Validar data de nascimento
-    if (formData.birthDate && !validateBirthDate(formData.birthDate)) {
+    if (birthDate && birthDate > new Date()) {
       setBirthDateError('A data de nascimento não pode ser no futuro');
       return;
     }
@@ -57,8 +61,9 @@ export default function CreateFarmerModal({
         isActive: formData.isActive,
       };
 
-      if (formData.birthDate) {
-        cleanData.birthDate = formData.birthDate;
+      if (birthDate) {
+        // Format date as YYYY-MM-DD for API (avoid timezone issues)
+        cleanData.birthDate = formatDateForAPI(birthDate);
       }
 
       if (formData.phone) {
@@ -115,15 +120,6 @@ export default function CreateFarmerModal({
     return value;
   };
 
-  const validateBirthDate = (dateString: string) => {
-    if (!dateString) return true; // Data opcional
-    
-    const selectedDate = new Date(dateString);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // Fim do dia atual
-    
-    return selectedDate <= today;
-  };
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
@@ -141,20 +137,6 @@ export default function CreateFarmerModal({
     }));
   };
 
-  const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      birthDate: value,
-    }));
-    
-    // Validar em tempo real
-    if (value && !validateBirthDate(value)) {
-      setBirthDateError('A data de nascimento não pode ser no futuro');
-    } else {
-      setBirthDateError(null);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -215,23 +197,20 @@ export default function CreateFarmerModal({
             </div>
 
             <div>
-              <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700">
-                Data de Nascimento
-              </label>
-              <input
-                type="date"
-                id="birthDate"
-                name="birthDate"
-                value={formData.birthDate}
-                onChange={handleBirthDateChange}
-                className={`mt-1 block w-full border rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-                  birthDateError ? 'border-red-300' : 'border-gray-300'
-                }`}
-                max={new Date().toISOString().split('T')[0]}
+              <DatePicker
+                label="Data de Nascimento"
+                value={birthDate}
+                onChange={setBirthDate}
+                placeholder="Selecionar data de nascimento"
+                error={birthDateError || undefined}
+                onBlur={() => {
+                  if (birthDate && birthDate > new Date()) {
+                    setBirthDateError('A data de nascimento não pode ser no futuro');
+                  } else {
+                    setBirthDateError(null);
+                  }
+                }}
               />
-              {birthDateError && (
-                <p className="mt-1 text-sm text-red-600">{birthDateError}</p>
-              )}
             </div>
 
             <div>
@@ -250,19 +229,6 @@ export default function CreateFarmerModal({
               />
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                Agricultor ativo
-              </label>
-            </div>
           </div>
 
           <div className="mt-6 flex justify-end space-x-3">

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Farmer, UpdateFarmerData } from '@/types/farmer';
 import { apiService } from '@/services/api';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { DatePicker } from './DatePicker';
+import { formatDateForAPI, parseDateFromAPI } from '@/utils/dateUtils';
 
 interface EditFarmerModalProps {
   farmer: Farmer | null;
@@ -19,6 +21,7 @@ export default function EditFarmerModal({
   onSave 
 }: EditFarmerModalProps) {
   const [formData, setFormData] = useState<UpdateFarmerData>({});
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
@@ -27,10 +30,15 @@ export default function EditFarmerModal({
     if (farmer) {
       setFormData({
         fullName: farmer.fullName,
-        birthDate: farmer.birthDate ? farmer.birthDate.split('T')[0] : '',
         phone: farmer.phone || '',
         isActive: farmer.isActive,
       });
+      // Set birthDate as Date object (avoid timezone issues)
+      if (farmer.birthDate) {
+        setBirthDate(parseDateFromAPI(farmer.birthDate));
+      } else {
+        setBirthDate(null);
+      }
     }
   }, [farmer]);
 
@@ -40,25 +48,17 @@ export default function EditFarmerModal({
       setError(null);
       setLoading(false);
       setBirthDateError(null);
+      setBirthDate(null);
     }
   }, [isOpen]);
 
-  const validateBirthDate = (dateString: string) => {
-    if (!dateString) return true; // Data opcional
-    
-    const selectedDate = new Date(dateString);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // Fim do dia atual
-    
-    return selectedDate <= today;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!farmer) return;
 
     // Validar data de nascimento
-    if (formData.birthDate && !validateBirthDate(formData.birthDate)) {
+    if (birthDate && birthDate > new Date()) {
       setBirthDateError('A data de nascimento não pode ser no futuro');
       return;
     }
@@ -68,7 +68,16 @@ export default function EditFarmerModal({
     setBirthDateError(null);
 
     try {
-      await apiService.updateFarmer(farmer.id, formData);
+      const updateData: UpdateFarmerData = { ...formData };
+      
+      if (birthDate) {
+        // Format date as YYYY-MM-DD for API (avoid timezone issues)
+        updateData.birthDate = formatDateForAPI(birthDate);
+      } else {
+        updateData.birthDate = undefined;
+      }
+
+      await apiService.updateFarmer(farmer.id, updateData);
       onSave();
       onClose();
     } catch (err) {
@@ -76,6 +85,18 @@ export default function EditFarmerModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatPhone = (value: string) => {
+    // Remove tudo que não é dígito
+    const numbers = value.replace(/\D/g, '');
+    
+    // Aplica a máscara do telefone
+    if (numbers.length <= 11) {
+      return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    
+    return value;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,20 +107,14 @@ export default function EditFarmerModal({
     }));
   };
 
-  const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
     setFormData(prev => ({
       ...prev,
-      birthDate: value,
+      phone: formatted,
     }));
-    
-    // Validar em tempo real
-    if (value && !validateBirthDate(value)) {
-      setBirthDateError('A data de nascimento não pode ser no futuro');
-    } else {
-      setBirthDateError(null);
-    }
   };
+
 
   if (!isOpen || !farmer) return null;
 
@@ -142,23 +157,20 @@ export default function EditFarmerModal({
             </div>
 
             <div>
-              <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700">
-                Data de Nascimento
-              </label>
-              <input
-                type="date"
-                id="birthDate"
-                name="birthDate"
-                value={formData.birthDate || ''}
-                onChange={handleBirthDateChange}
-                className={`mt-1 block w-full border rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-                  birthDateError ? 'border-red-300' : 'border-gray-300'
-                }`}
-                max={new Date().toISOString().split('T')[0]}
+              <DatePicker
+                label="Data de Nascimento"
+                value={birthDate}
+                onChange={setBirthDate}
+                placeholder="Selecionar data de nascimento"
+                error={birthDateError || undefined}
+                onBlur={() => {
+                  if (birthDate && birthDate > new Date()) {
+                    setBirthDateError('A data de nascimento não pode ser no futuro');
+                  } else {
+                    setBirthDateError(null);
+                  }
+                }}
               />
-              {birthDateError && (
-                <p className="mt-1 text-sm text-red-600">{birthDateError}</p>
-              )}
             </div>
 
             <div>
@@ -170,22 +182,39 @@ export default function EditFarmerModal({
                 id="phone"
                 name="phone"
                 value={formData.phone || ''}
-                onChange={handleInputChange}
-                placeholder="(11) 99999-9999"
+                onChange={handlePhoneChange}
+                placeholder="(00) 00000-0000"
+                maxLength={15}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
             <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive || false}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  name="isActive"
+                  checked={formData.isActive || false}
+                  onChange={handleInputChange}
+                  className="sr-only"
+                />
+                <label 
+                  htmlFor="isActive" 
+                  className={`w-4 h-4 border-2 rounded transition-colors cursor-pointer flex items-center justify-center ${
+                    formData.isActive 
+                      ? 'bg-indigo-600 border-indigo-600' 
+                      : 'bg-white border-indigo-300'
+                  }`}
+                >
+                  {formData.isActive && (
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </label>
+              </div>
+              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900 cursor-pointer">
                 Agricultor ativo
               </label>
             </div>
