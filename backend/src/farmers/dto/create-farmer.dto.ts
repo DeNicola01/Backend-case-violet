@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsDateString, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsValidCPF } from '../utils/cpf.validator';
+import { IsNotFutureDate } from '../validators/not-future-date.validator';
 
 export class CreateFarmerDto {
   @ApiProperty({ description: 'Nome completo do agricultor' })
@@ -15,6 +16,7 @@ export class CreateFarmerDto {
   @ApiPropertyOptional({ description: 'Data de nascimento do agricultor' })
   @IsOptional()
   @IsDateString()
+  @IsNotFutureDate()
   birthDate?: string;
 
   @ApiPropertyOptional({ description: 'Telefone do agricultor' })

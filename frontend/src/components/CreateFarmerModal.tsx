@@ -25,20 +25,29 @@ export default function CreateFarmerModal({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [birthDateError, setBirthDateError] = useState<string | null>(null);
 
   // Limpar erro quando o modal é fechado
   useEffect(() => {
     if (!isOpen) {
       setError(null);
       setLoading(false);
+      setBirthDateError(null);
     }
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar data de nascimento
+    if (formData.birthDate && !validateBirthDate(formData.birthDate)) {
+      setBirthDateError('A data de nascimento não pode ser no futuro');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
+    setBirthDateError(null);
 
     try {
       // Limpar dados vazios
@@ -106,6 +115,16 @@ export default function CreateFarmerModal({
     return value;
   };
 
+  const validateBirthDate = (dateString: string) => {
+    if (!dateString) return true; // Data opcional
+    
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Fim do dia atual
+    
+    return selectedDate <= today;
+  };
+
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
     setFormData(prev => ({
@@ -120,6 +139,21 @@ export default function CreateFarmerModal({
       ...prev,
       phone: formatted,
     }));
+  };
+
+  const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      birthDate: value,
+    }));
+    
+    // Validar em tempo real
+    if (value && !validateBirthDate(value)) {
+      setBirthDateError('A data de nascimento não pode ser no futuro');
+    } else {
+      setBirthDateError(null);
+    }
   };
 
   if (!isOpen) return null;
@@ -189,9 +223,15 @@ export default function CreateFarmerModal({
                 id="birthDate"
                 name="birthDate"
                 value={formData.birthDate}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                onChange={handleBirthDateChange}
+                className={`mt-1 block w-full border rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                  birthDateError ? 'border-red-300' : 'border-gray-300'
+                }`}
+                max={new Date().toISOString().split('T')[0]}
               />
+              {birthDateError && (
+                <p className="mt-1 text-sm text-red-600">{birthDateError}</p>
+              )}
             </div>
 
             <div>

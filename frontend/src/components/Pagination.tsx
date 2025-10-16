@@ -31,12 +31,8 @@ export default function Pagination({ meta, onPageChange }: PaginationProps) {
     return pages;
   };
 
-  if (totalPages <= 1) {
-    return null;
-  }
-
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-bl-lg rounded-br-lg">
       <div className="flex flex-1 justify-between sm:hidden">
         <button
           onClick={() => onPageChange(page - 1)}

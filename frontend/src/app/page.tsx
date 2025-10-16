@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Farmer, FindFarmersFilters, PaginationOptions, PaginationMeta } from '@/types/farmer';
 import { apiService } from '@/services/api';
 import FarmersTable from '@/components/FarmersTable';
@@ -16,33 +16,98 @@ export default function Home() {
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FindFarmersFilters>({});
-  const [pagination, setPagination] = useState<PaginationOptions>({ page: 1, limit: 10 });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
   const [editingFarmer, setEditingFarmer] = useState<Farmer | null>(null);
   const [deletingFarmer, setDeletingFarmer] = useState<Farmer | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
-  const [statusValue, setStatusValue] = useState<string>('');
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchFarmers = useCallback(async () => {
+  // Build filters object from search and status
+  const buildFilters = useCallback((): FindFarmersFilters => {
+    const filters: FindFarmersFilters = {};
+    
+    if (searchTerm.trim()) {
+      const isCpf = /^[\d.\-\s]*$/.test(searchTerm) && searchTerm.replace(/\D/g, '').length > 0;
+      if (isCpf) {
+        filters.cpf = searchTerm;
+      } else {
+        filters.name = searchTerm;
+      }
+    }
+    
+    if (statusFilter !== '') {
+      filters.isActive = statusFilter === 'true';
+    }
+    
+    return filters;
+  }, [searchTerm, statusFilter]);
+
+  // Build pagination object
+  const buildPagination = useCallback((): PaginationOptions => {
+    return { page: currentPage, limit: pageSize };
+  }, [currentPage, pageSize]);
+
+  const fetchFarmersRef = useRef<((showLoading?: boolean) => Promise<void>) | null>(null);
+  
+  const fetchFarmers = useCallback(async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError(null);
+      const filters = buildFilters();
+      const pagination = buildPagination();
       const response = await apiService.getFarmers(filters, pagination);
       setFarmers(response.data);
       setPaginationMeta(response.meta);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar agricultores');
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
-  }, [filters, pagination]);
+  }, [buildFilters, buildPagination]);
 
+  fetchFarmersRef.current = fetchFarmers;
+
+  // Separate effect for initial load (with loading)
   useEffect(() => {
-    fetchFarmers();
-  }, [fetchFarmers]);
+    if (fetchFarmersRef.current) {
+      fetchFarmersRef.current(true);
+    }
+  }, []);
+
+  // Effect for status filter and pagination changes (without loading)
+  useEffect(() => {
+    if (fetchFarmersRef.current) {
+      fetchFarmersRef.current(false);
+    }
+  }, [statusFilter, currentPage, pageSize]);
+
+  // Effect for search term with debounce (without loading)
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    debounceTimer.current = setTimeout(() => {
+      if (fetchFarmersRef.current) {
+        fetchFarmersRef.current(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [searchTerm]);
 
   const handleEdit = useCallback((farmer: Farmer) => {
     setEditingFarmer(farmer);
@@ -61,37 +126,47 @@ export default function Home() {
       } else {
         await apiService.activateFarmer(farmer.id);
       }
-      await fetchFarmers();
+      await fetchFarmers(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao alterar status do agricultor');
     }
   }, [fetchFarmers]);
 
   const handleEditSave = () => {
-    fetchFarmers();
+    fetchFarmers(false);
   };
 
   const handleDeleteConfirm = () => {
-    fetchFarmers();
+    fetchFarmers(false);
   };
 
-  const handleFiltersChange = useCallback((newFilters: FindFarmersFilters) => {
-    setFilters(newFilters);
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when filters change
-  }, []);
-
+  // Handle search change with debounce
   const handleSearchChange = useCallback((value: string) => {
-    setSearchValue(value);
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
   }, []);
 
+  // Handle status filter change
   const handleStatusChange = useCallback((value: string) => {
-    setStatusValue(value);
+    setStatusFilter(value);
+    setCurrentPage(1); // Reset to first page when filtering
+  }, []);
+
+  // Handle page change
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
   }, []);
 
 
-  const handlePageChange = (page: number) => {
-    setPagination({ ...pagination, page });
-  };
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setCurrentPage(1);
+  }, []);
+
+  // Check if any filters are active
+  const hasActiveFilters = Boolean(searchTerm || statusFilter !== '');
 
   if (loading) {
     return (
@@ -132,28 +207,33 @@ export default function Home() {
 
           <FarmersFilters
             key="farmers-filters"
-            searchValue={searchValue}
-            statusValue={statusValue}
+            searchValue={searchTerm}
+            statusValue={statusFilter}
             onSearchChange={handleSearchChange}
             onStatusChange={handleStatusChange}
-            onFiltersChange={handleFiltersChange}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
           />
 
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-xl shadow-gray-200/50 rounded-lg border border-gray-200">
             <FarmersTable
-              key="farmers-table"
               farmers={farmers}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onToggleStatus={handleToggleStatus}
             />
             
-            {paginationMeta && (
-              <Pagination
-                meta={paginationMeta}
-                onPageChange={handlePageChange}
-              />
-            )}
+            <Pagination
+              meta={paginationMeta || {
+                page: currentPage,
+                limit: pageSize,
+                total: 0,
+                totalPages: 0,
+                hasPrevious: false,
+                hasNext: false
+              }}
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsDateString, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotFutureDate } from '../validators/not-future-date.validator';
 
 export class UpdateFarmerDto {
   @ApiPropertyOptional({ 
@@ -16,6 +17,7 @@ export class UpdateFarmerDto {
   })
   @IsOptional()
   @IsDateString()
+  @IsNotFutureDate()
   birthDate?: string;
 
   @ApiPropertyOptional({ 
