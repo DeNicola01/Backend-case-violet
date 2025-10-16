@@ -27,7 +27,6 @@ interface DatePickerProps {
   onBlur?: () => void;
   placeholder?: string;
   error?: string;
-  isValid?: boolean;
   required?: boolean;
   className?: string;
   label?: string;
@@ -41,7 +40,6 @@ export function DatePicker({
   onBlur,
   placeholder = "Selecionar data",
   error,
-  isValid,
   required = false,
   className,
   label,
@@ -181,17 +179,6 @@ export function DatePicker({
     });
   };
 
-  const navigateYear = (direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
-      const newMonth = new Date(prev);
-      if (direction === 'prev') {
-        newMonth.setFullYear(prev.getFullYear() - 1);
-      } else {
-        newMonth.setFullYear(prev.getFullYear() + 1);
-      }
-      return newMonth;
-    });
-  };
 
   const selectYear = (year: number) => {
     setCurrentMonth(prev => {
