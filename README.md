@@ -43,58 +43,6 @@ Sistema completo para gerenciamento de agricultores com backend em NestJS e fron
 - ✅ Validação de regras de negócio
 - ✅ Interface moderna com Tailwind CSS
 
-## Como Executar
-
-### Backend
-
-1. Navegue para a pasta backend:
-```bash
-cd backend
-```
-
-2. Instale as dependências:
-```bash
-npm install
-```
-
-3. Configure o MongoDB:
-```bash
-docker-compose up -d
-```
-
-4. Execute o backend:
-```bash
-npm run start:dev
-```
-
-O backend estará disponível em `http://localhost:3333`
-Documentação Swagger: `http://localhost:3333/api`
-
-### Frontend
-
-1. Navegue para a pasta frontend:
-```bash
-cd frontend
-```
-
-2. Instale as dependências:
-```bash
-npm install
-```
-
-3. Configure a URL da API:
-Crie um arquivo `.env.local` com:
-```
-NEXT_PUBLIC_API_URL=http://localhost:3333
-```
-
-4. Execute o frontend:
-```bash
-npm run dev
-```
-
-O frontend estará disponível em `http://localhost:3001`
-
 ## Regras de Negócio
 
 1. **CPF Único**: Não pode haver dois agricultores com o mesmo CPF
@@ -152,14 +100,5 @@ src/
 - Serviços para comunicação com API
 - Modais para ações complexas
 - Validação de formulários
-
-## Próximas Funcionalidades
-
-- [ ] Autenticação e autorização
-- [ ] Filtros e busca avançada
-- [ ] Paginação
-- [ ] Exportação de dados
-- [ ] Dashboard com estatísticas
-- [ ] Notificações em tempo real
 
 
