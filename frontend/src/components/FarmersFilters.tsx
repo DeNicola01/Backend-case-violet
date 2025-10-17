@@ -1,6 +1,7 @@
 'use client';
-import { memo, useState, useEffect, useRef } from 'react';
-import { ChevronDownIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { memo } from 'react';
+import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { SelectFilter, SelectOption } from './SelectFilter';
 
 interface FarmersFiltersProps {
   searchValue: string;
@@ -19,38 +20,15 @@ const FarmersFilters = memo(function FarmersFilters({
   onClearFilters,
   onCreateFarmer
 }: FarmersFiltersProps) {
-  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
   // Check if any filters are active
   const hasActiveFilters = Boolean(searchValue || statusValue !== '');
 
-  const getStatusLabel = (value: string) => {
-    switch (value) {
-      case 'true': return 'Ativo';
-      case 'false': return 'Inativo';
-      default: return 'Todos os status';
-    }
-  };
-
-  const handleStatusSelect = (value: string) => {
-    onStatusChange(value);
-    setIsStatusDropdownOpen(false);
-  };
-
-  // Fechar dropdown quando clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsStatusDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  // Status options for the select filter
+  const statusOptions: SelectOption[] = [
+    { value: '', label: 'Todos os status' },
+    { value: 'true', label: 'Ativo' },
+    { value: 'false', label: 'Inativo' }
+  ];
 
   return (
     <div className="mb-6">
@@ -65,41 +43,14 @@ const FarmersFilters = memo(function FarmersFilters({
           />
         </div>
 
-        <div className="w-48 relative" ref={dropdownRef}>
-          <button
-            type="button"
-            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-            className="flex items-center justify-between w-full h-10 border border-gray-300 rounded-md px-3 text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <span className="text-sm">{getStatusLabel(statusValue)}</span>
-            <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-          </button>
-          
-          {isStatusDropdownOpen && (
-            <div className="absolute right-0 mt-1 w-full bg-white rounded-md shadow-lg z-10 border border-gray-200">
-              <div className="py-1">
-                <button
-                  onClick={() => handleStatusSelect('')}
-                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Todos os status
-                </button>
-                <button
-                  onClick={() => handleStatusSelect('true')}
-                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Ativo
-                </button>
-                <button
-                  onClick={() => handleStatusSelect('false')}
-                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Inativo
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <SelectFilter
+          value={statusValue}
+          onChange={onStatusChange}
+          options={statusOptions}
+          placeholder="Todos os status"
+          position="right"
+          fixedWidth={true}
+        />
 
         <button
           onClick={onClearFilters}
