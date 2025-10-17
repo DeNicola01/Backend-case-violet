@@ -3,12 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Farmer, FindFarmersFilters, PaginationOptions, PaginationMeta } from '@/types/farmer';
 import { apiService } from '@/services/api';
-import FarmersTable from '@/components/FarmersTable';
-import FarmersFilters from '@/components/FarmersFilters';
-import Pagination from '@/components/Pagination';
-import EditFarmerModal from '@/components/EditFarmerModal';
-import DeleteConfirmModal from '@/components/DeleteConfirmModal';
-import CreateFarmerModal from '@/components/CreateFarmerModal';
+import { 
+  FarmersTable, 
+  FarmersFilters, 
+  Pagination, 
+  EditFarmerModal, 
+  DeleteConfirmModal, 
+  CreateFarmerModal,
+  LoadingSpinner,
+  ErrorMessage
+} from '@/components';
 
 export default function Home() {
   const [farmers, setFarmers] = useState<Farmer[]>([]);
@@ -168,10 +172,11 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando agricultores...</p>
-        </div>
+        <LoadingSpinner
+          size="lg"
+          text="Carregando agricultores..."
+          centered
+        />
       </div>
     );
   }
@@ -188,9 +193,11 @@ export default function Home() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
-            </div>
+            <ErrorMessage
+              message={error}
+              type="error"
+              className="mb-6"
+            />
           )}
 
           <FarmersFilters

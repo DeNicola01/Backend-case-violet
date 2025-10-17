@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { CreateFarmerData } from '@/types/farmer';
 import { apiService } from '@/services/api';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import { DatePicker } from './DatePicker';
 import { formatDateForAPI } from '@/utils/dateUtils';
+import { Modal, Button, InputField, ErrorMessage } from './';
 
 interface CreateFarmerModalProps {
   isOpen: boolean;
@@ -88,167 +88,92 @@ export default function CreateFarmerModal({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (field: keyof CreateFarmerData) => (value: string) => {
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [field]: value,
     }));
   };
 
-  const formatCPF = (value: string) => {
-    // Remove tudo que não é dígito
-    const numbers = value.replace(/\D/g, '');
-    
-    // Aplica a máscara do CPF
-    if (numbers.length <= 11) {
-      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    }
-    
-    return value;
-  };
-
-  const formatPhone = (value: string) => {
-    // Remove tudo que não é dígito
-    const numbers = value.replace(/\D/g, '');
-    
-    // Aplica a máscara do telefone
-    if (numbers.length <= 11) {
-      return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-    
-    return value;
-  };
-
-
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCPF(e.target.value);
-    setFormData(prev => ({
-      ...prev,
-      cpf: formatted,
-    }));
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
-    setFormData(prev => ({
-      ...prev,
-      phone: formatted,
-    }));
-  };
-
-
-  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            Novo Agricultor
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Novo Agricultor"
+      size="md"
+    >
+      <form onSubmit={handleSubmit}>
+        {error && (
+          <ErrorMessage
+            message={error}
+            type="error"
+            className="mb-4"
+          />
+        )}
+
+        <div className="space-y-4">
+          <InputField
+            label="Nome Completo"
+            name="fullName"
+            value={formData.fullName}
+            onChange={handleInputChange('fullName')}
+            placeholder="Digite o nome completo"
+            required
+          />
+
+          <InputField
+            label="CPF"
+            name="cpf"
+            value={formData.cpf}
+            onChange={handleInputChange('cpf')}
+            mask="cpf"
+            required
+          />
+
+          <DatePicker
+            label="Data de Nascimento"
+            value={birthDate}
+            onChange={setBirthDate}
+            placeholder="Selecionar data de nascimento"
+            error={birthDateError || undefined}
+            onBlur={() => {
+              if (birthDate && birthDate > new Date()) {
+                setBirthDateError('A data de nascimento não pode ser no futuro');
+              } else {
+                setBirthDateError(null);
+              }
+            }}
+          />
+
+          <InputField
+            label="Telefone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleInputChange('phone')}
+            mask="phone"
+            type="tel"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Nome Completo *
-              </label>
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                required
-                placeholder="Digite o nome completo"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="cpf" className="block text-sm font-medium text-gray-700">
-                CPF *
-              </label>
-              <input
-                type="text"
-                id="cpf"
-                name="cpf"
-                value={formData.cpf}
-                onChange={handleCPFChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                required
-                placeholder="000.000.000-00"
-                maxLength={14}
-              />
-            </div>
-
-            <div>
-              <DatePicker
-                label="Data de Nascimento"
-                value={birthDate}
-                onChange={setBirthDate}
-                placeholder="Selecionar data de nascimento"
-                error={birthDateError || undefined}
-                onBlur={() => {
-                  if (birthDate && birthDate > new Date()) {
-                    setBirthDateError('A data de nascimento não pode ser no futuro');
-                  } else {
-                    setBirthDateError(null);
-                  }
-                }}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Telefone
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handlePhoneChange}
-                placeholder="(00) 00000-0000"
-                maxLength={15}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-
-          </div>
-
-          <div className="mt-6 flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {loading ? 'Criando...' : 'Criar Agricultor'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="mt-6 flex justify-end space-x-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            loading={loading}
+            disabled={loading}
+          >
+            {loading ? 'Criando...' : 'Criar Agricultor'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

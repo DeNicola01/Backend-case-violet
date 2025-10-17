@@ -30,7 +30,6 @@ export function parseDateFromAPI(dateString: string): Date {
   
   const parts = cleanDateString.split('-');
   if (parts.length !== 3) {
-    console.warn('Invalid date format:', dateString);
     return new Date();
   }
   
@@ -40,7 +39,6 @@ export function parseDateFromAPI(dateString: string): Date {
   
   // Validate the parsed values
   if (isNaN(year) || isNaN(month) || isNaN(day)) {
-    console.warn('Invalid date values:', { year, month, day });
     return new Date();
   }
   
@@ -48,7 +46,6 @@ export function parseDateFromAPI(dateString: string): Date {
   
   // Validate the created date
   if (isNaN(date.getTime())) {
-    console.warn('Created invalid date from:', { year, month, day });
     return new Date();
   }
   

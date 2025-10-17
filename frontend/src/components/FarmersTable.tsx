@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, memo, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { memo } from 'react';
 import { Farmer } from '@/types/farmer';
 import { 
   EllipsisVerticalIcon, 
@@ -11,6 +10,7 @@ import {
   XCircleIcon 
 } from '@heroicons/react/24/outline';
 import { parseDateFromAPI } from '@/utils/dateUtils';
+import { StatusBadge, DropdownMenu } from './';
 
 interface FarmersTableProps {
   farmers: Farmer[];
@@ -25,9 +25,6 @@ const FarmersTable = memo(function FarmersTable({
   onDelete, 
   onToggleStatus
 }: FarmersTableProps) {
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
-  const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
@@ -40,7 +37,6 @@ const FarmersTable = memo(function FarmersTable({
       }
       return date.toLocaleDateString('pt-BR');
     } catch (error) {
-      console.warn('Error formatting date:', dateString, error);
       return '-';
     }
   };
@@ -54,41 +50,27 @@ const FarmersTable = memo(function FarmersTable({
     return phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
   };
 
-  const handleMenuToggle = (farmerId: string) => {
-    if (activeMenu === farmerId) {
-      setActiveMenu(null);
-      setMenuPosition(null);
-    } else {
-      const button = buttonRefs.current[farmerId];
-      if (button) {
-        const rect = button.getBoundingClientRect();
-        setMenuPosition({
-          top: rect.bottom + window.scrollY - 8,
-          left: rect.right + window.scrollX - 192 // 192px = width of dropdown (w-48)
-        });
-      }
-      setActiveMenu(farmerId);
+  const getMenuItems = (farmer: Farmer) => [
+    {
+      id: 'edit',
+      label: 'Editar',
+      icon: <PencilIcon className="h-4 w-4" />,
+      onClick: () => onEdit(farmer)
+    },
+    {
+      id: 'toggle-status',
+      label: farmer.isActive ? 'Desativar' : 'Ativar',
+      icon: farmer.isActive ? <XCircleIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />,
+      onClick: () => onToggleStatus(farmer)
+    },
+    {
+      id: 'delete',
+      label: 'Excluir',
+      icon: <TrashIcon className="h-4 w-4" />,
+      onClick: () => onDelete(farmer),
+      variant: 'danger' as const
     }
-  };
-
-  const handleMenuClose = () => {
-    setActiveMenu(null);
-    setMenuPosition(null);
-  };
-
-  // Fechar menu quando clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (activeMenu && !(event.target as Element).closest('[data-menu-container]')) {
-        handleMenuClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [activeMenu]);
+  ];
 
   return (
     <div className="overflow-x-auto overflow-y-visible min-h-[500px]">
@@ -131,24 +113,18 @@ const FarmersTable = memo(function FarmersTable({
                 {formatPhone(farmer.phone)}
               </td>
               <td className="px-6 py-3 whitespace-nowrap">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  farmer.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {farmer.isActive ? 'Ativo' : 'Inativo'}
-                </span>
+                <StatusBadge status={farmer.isActive} />
               </td>
               <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
-                <div className="relative" data-menu-container>
-                  <button
-                    ref={(el) => { buttonRefs.current[farmer.id] = el; }}
-                    onClick={() => handleMenuToggle(farmer.id)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none rounded-full p-1"
-                  >
-                    <EllipsisVerticalIcon className="h-5 w-5" />
-                  </button>
-                </div>
+                <DropdownMenu
+                  trigger={
+                    <button className="text-gray-400 hover:text-gray-600 focus:outline-none rounded-full p-1">
+                      <EllipsisVerticalIcon className="h-5 w-5" />
+                    </button>
+                  }
+                  items={getMenuItems(farmer)}
+                  position="right"
+                />
               </td>
             </tr>
           ))}
@@ -169,73 +145,6 @@ const FarmersTable = memo(function FarmersTable({
           )}
         </tbody>
       </table>
-      
-      {/* Portal para o dropdown */}
-      {activeMenu && menuPosition && typeof window !== 'undefined' && createPortal(
-        <div 
-          className="fixed w-48 bg-white rounded-md shadow-xl z-[9999] border border-gray-200"
-          style={{
-            top: `${menuPosition.top}px`,
-            left: `${menuPosition.left}px`
-          }}
-          data-menu-container
-        >
-          <div className="py-1">
-            <button
-              onClick={() => {
-                const farmer = farmers.find(f => f.id === activeMenu);
-                if (farmer) {
-                  onEdit(farmer);
-                  handleMenuClose();
-                }
-              }}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <PencilIcon className="h-4 w-4 mr-2" />
-              Editar
-            </button>
-            <button
-              onClick={() => {
-                const farmer = farmers.find(f => f.id === activeMenu);
-                if (farmer) {
-                  onToggleStatus(farmer);
-                  handleMenuClose();
-                }
-              }}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              {(() => {
-                const farmer = farmers.find(f => f.id === activeMenu);
-                return farmer?.isActive ? (
-                  <>
-                    <XCircleIcon className="h-4 w-4 mr-2" />
-                    Desativar
-                  </>
-                ) : (
-                  <>
-                    <CheckCircleIcon className="h-4 w-4 mr-2" />
-                    Ativar
-                  </>
-                );
-              })()}
-            </button>
-            <button
-              onClick={() => {
-                const farmer = farmers.find(f => f.id === activeMenu);
-                if (farmer) {
-                  onDelete(farmer);
-                  handleMenuClose();
-                }
-              }}
-              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              <TrashIcon className="h-4 w-4 mr-2" />
-              Excluir
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 });
