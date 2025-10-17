@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type FarmerDocument = Farmer & Document & {
+  _id: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 };

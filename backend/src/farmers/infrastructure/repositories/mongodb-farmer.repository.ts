@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { FarmerDocument, FarmerSchema } from '../../schemas/farmer.schema';
 import { Farmer } from '../../domain/entities/farmer.entity';
 import { FarmerRepository } from '../../domain/repositories/farmer.repository';
@@ -34,7 +34,7 @@ export class MongodbFarmerRepository implements FarmerRepository {
   async update(farmer: Farmer): Promise<Farmer> {
     const updatedFarmer = await this.farmerModel
       .findByIdAndUpdate(
-        farmer.id.getValue(),
+        new Types.ObjectId(farmer.id.getValue()),
         {
           fullName: farmer.name.getValue(),
           birthDate: farmer.birthDate,
@@ -54,11 +54,11 @@ export class MongodbFarmerRepository implements FarmerRepository {
   }
 
   async delete(id: FarmerId): Promise<void> {
-    await this.farmerModel.findByIdAndDelete(id.getValue()).exec();
+    await this.farmerModel.findByIdAndDelete(new Types.ObjectId(id.getValue())).exec();
   }
 
   async findById(id: FarmerId): Promise<Farmer | null> {
-    const farmer = await this.farmerModel.findById(id.getValue()).exec();
+    const farmer = await this.farmerModel.findById(new Types.ObjectId(id.getValue())).exec();
     return farmer ? this.toDomainEntity(farmer) : null;
   }
 
